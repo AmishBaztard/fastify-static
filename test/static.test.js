@@ -3703,3 +3703,26 @@ t.test(
     t.end()
   }
 )
+t.test(
+  'converts URL to path',
+  async (t) => {
+    const pluginOptions = {
+      root: url.pathToFileURL(path.join(__dirname, '/static'))
+    }
+
+    const fastify = Fastify()
+
+    fastify.register(fastifyStatic, pluginOptions)
+    const response = await fastify.inject({
+      method: 'GET',
+      url: 'foobar.html',
+      headers: {
+        'accept-encoding': '*, *'
+      }
+    })
+    genericResponseChecks(t, response)
+    t.equal(response.statusCode, 200)
+    t.same(response.body, foobarContent)
+    t.end()
+  }
+)

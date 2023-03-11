@@ -1,6 +1,7 @@
 'use strict'
 
 const path = require('path')
+const url = require('url')
 const statSync = require('fs').statSync
 const { PassThrough } = require('readable-stream')
 const glob = require('glob')
@@ -14,6 +15,7 @@ const encodingNegotiator = require('@fastify/accept-negotiator')
 const dirList = require('./lib/dirList')
 
 async function fastifyStatic (fastify, opts) {
+  opts.root = convertRootPathIfUrl(opts.root)
   checkRootPathForErrors(fastify, opts.root)
 
   const setHeaders = opts.setHeaders
@@ -393,6 +395,31 @@ async function fastifyStatic (fastify, opts) {
     pumpSendToReply(req, reply, file, rootPath)
   }
 }
+function convertRootPathIfUrl (rootPath) {
+  const convertIfUrl = (path) => {
+    if (path instanceof URL) {
+      return url.fileURLToPath(path)
+    }
+    return path
+  }
+
+  if (rootPath === undefined) {
+    return rootPath
+  }
+  if (Array.isArray(rootPath)) {
+    if (!rootPath.length) {
+      return rootPath
+    }
+    return rootPath.map((path) => convertIfUrl(path))
+  }
+
+  if (rootPath instanceof URL) {
+    return convertIfUrl(rootPath)
+  }
+
+  return rootPath
+}
+
 function checkRootPathForErrors (fastify, rootPath) {
   if (rootPath === undefined) {
     throw new Error('"root" option is required')
